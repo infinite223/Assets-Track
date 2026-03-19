@@ -76,7 +76,6 @@ export default function RootLayout() {
           selectedMonth={selectedMonth}
           setSelectedMonth={setSelectedMonth}
         />
-        <StatusBar style="light" />
       </SafeAreaView>
     </SafeAreaProvider>
   );

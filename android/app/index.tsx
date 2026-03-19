@@ -41,8 +41,6 @@ export default function HomePage() {
       .filter((d) => d.status === 'received')
       .reduce((sum, d) => sum + (d.totalAmount || 0), 0);
 
-    const totalAbsoluteProfit = stockProfit + dividendProfit;
-
     const sortedPositions = [...latestReport.positions].sort((a, b) => {
       let aVal: any, bVal: any;
       if (portfolioSort.key === 'currPrice') {
@@ -56,6 +54,7 @@ export default function HomePage() {
     });
 
     const realizedProfit = allReports.reduce((sum, r) => sum + (r.closedProfit || 0), 0);
+    const totalAbsoluteProfit = stockProfit + dividendProfit + realizedProfit;
 
     return {
       totalInvested: latestReport.totalInvested,

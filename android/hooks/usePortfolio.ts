@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
@@ -112,7 +112,7 @@ export const usePortfolio = () => {
 
   const exportData = async () => {
     try {
-      const fileUri = (FileSystem as any).documentDirectory + 'portfolio_backup.json';
+      const fileUri = FileSystem.documentDirectory + 'portfolio_backup.json';
       await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(store, null, 2));
       await Sharing.shareAsync(fileUri, {
         mimeType: 'application/json',
@@ -142,6 +142,49 @@ export const usePortfolio = () => {
     }
   };
 
+  const exportDividendsOnly = async () => {
+    try {
+      const fileUri = FileSystem.documentDirectory + 'dividends_export.json';
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(store.plannedDividends, null, 2));
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'application/json',
+        dialogTitle: 'Eksportuj same dywidendy',
+      });
+    } catch (e) {
+      Alert.alert('Błąd', 'Nie udało się wyeksportować dywidend.');
+    }
+  };
+
+  const importDividendsOnly = async (): Promise<boolean> => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: 'application/json' });
+      if (result.canceled) return false;
+
+      const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      const importedDividends = JSON.parse(fileContent);
+
+      if (Array.isArray(importedDividends)) {
+        setStore((prev) => ({
+          ...prev,
+          plannedDividends: [
+            ...prev.plannedDividends,
+            ...importedDividends.filter(
+              (imp: Dividend) => !prev.plannedDividends.some((curr) => curr.id === imp.id)
+            ),
+          ],
+        }));
+        return true;
+      }
+      throw new Error('Nieprawidłowy format pliku dywidend');
+    } catch (e) {
+      Alert.alert(
+        'Błąd',
+        'Nie udało się zaimportować dywidend. Upewnij się, że plik zawiera tablicę obiektów.'
+      );
+      return false;
+    }
+  };
+
   return {
     store,
     isLoaded,
@@ -153,5 +196,7 @@ export const usePortfolio = () => {
     resetAllData,
     exportData,
     importData,
+    exportDividendsOnly,
+    importDividendsOnly,
   };
 };
